@@ -2,13 +2,16 @@ name: Build Innu Automatic APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -25,9 +28,9 @@ jobs:
       - name: Extract project ZIP
         run: |
           mkdir -p extracted
-          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)
           unzip -q "$ZIP_FILE" -d extracted
-          PROJECT_DIR=$(dirname "$(find extracted -name settings.gradle.kts -print -quit)")
+          PROJECT_DIR=$(find extracted -name settings.gradle.kts -printf '%h\n' | head -n 1)
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Build APK
@@ -35,6 +38,10 @@ jobs:
           gradle -p "$PROJECT_DIR" assembleDebug
 
       - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Innu-Automatic-APK
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Innu-Automatic-APK
